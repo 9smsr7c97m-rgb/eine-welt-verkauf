@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="EineWelt">
+<meta name="theme-color" content="#2d6a4f">
+<title>Eine Welt Verkauf</title>
+<style>
+  :root {
+    --green: #2d6a4f;
+    --green-light: #40916c;
+    --green-pale: #d8f3dc;
+    --earth: #7f4f24;
+    --earth-light: #bc6c25;
+    --cream: #f7f7f2;
+    --sand: #e9edc9;
+    --text: #1b1b1b;
+    --text-soft: #666;
+    --red: #c1121f;
+    --red-pale: #fde8e9;
+    --radius: 12px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.09);
+    --nav-h: 60px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    overscroll-behavior: none;
+  }
+
+  /* INSTALL BANNER */
+  #install-banner {
+    display: none;
+    background: var(--green);
+    color: white;
+    padding: 10px 16px;
+    font-size: 13px;
+    align-items: center;
+    gap: 10px;
+  }
+  #install-banner.show { display: flex; }
+  #install-banner span { flex: 1; }
+  #install-banner button {
+    background: white; color: var(--green);
+    border: none; border-radius: 6px;
+    padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer;
+  }
+  #install-banner .close-btn {
+    background: none; color: white; padding: 4px 8px; font-size: 16px;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--green);
+    color: white;
+    padding: 14px 16px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .logo { font-size: 20px; }
+  header h1 { font-size: 16px; font-weight: 700; line-height: 1.2; }
+  header h1 span { font-size: 11px; font-weight: 400; opacity: 0.8; display: block; }
+
+  /* BOTTOM NAV */
+  nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: white;
+    border-top: 1px solid #ddd;
+    display: flex;
+    z-index: 100;
+    padding-bottom: var(--safe-bottom);
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.08);
+  }
+  nav button {
+    flex: 1;
+    padding: 8px 4px 6px;
+    border: none;
+    background: none;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-soft);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    transition: color 0.15s;
+  }
+  nav button .nav-icon { font-size: 22px; line-height: 1; }
+  nav button.active { color: var(--green); }
+  nav button.active .nav-icon { transform: scale(1.1); }
+
+  /* PAGES */
+  .page {
+    display: none;
+    padding: 14px 14px calc(var(--nav-h) + var(--safe-bottom) + 14px);
+    max-width: 600px;
+    margin: 0 auto;
+    min-height: calc(100vh - 52px);
+  }
+  .page.active { display: block; }
+
+  /* CARDS */
+  .card {
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 12px;
+  }
+  .card-pad { padding: 14px; }
+
+  /* ── SCAN PAGE ── */
+  .scan-zone {
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 18px 16px;
+    text-align: center;
+    margin-bottom: 12px;
+  }
+  .scan-zone h2 { font-size: 15px; color: var(--green); margin-bottom: 6px; }
+  .scan-zone p { font-size: 12px; color: var(--text-soft); margin-bottom: 14px; }
+  .barcode-input-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .barcode-input-row input {
+    flex: 1; padding: 11px 13px;
+    border: 2px solid #ddd; border-radius: 8px;
+    font-size: 15px; outline: none;
+  }
+  .barcode-input-row input:focus { border-color: var(--green); }
+  .camera-btn {
+    background: var(--green); color: white; border: none;
+    border-radius: 8px; padding: 11px 14px;
+    font-size: 18px; cursor: pointer; white-space: nowrap;
+  }
+  .btn {
+    padding: 12px 16px; border: none; border-radius: 8px;
+    font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity 0.1s;
+  }
+  .btn:active { opacity: 0.8; }
+  .btn-primary { background: var(--green); color: white; }
+  .btn-earth { background: var(--earth); color: white; }
+  .btn-ghost { background: #eee; color: var(--text); }
+  .btn-full { width: 100%; margin-top: 8px; padding: 13px; }
+
+  #not-found {
+    background: var(--red-pale); border: 2px solid var(--red);
+    border-radius: var(--radius); padding: 12px 14px;
+    margin-bottom: 12px; display: none; text-align: center;
+  }
+  #not-found p { font-size: 13px; color: var(--red); font-weight: 600; }
+
+  #found-product {
+    background: var(--green-pale); border: 2px solid var(--green-light);
+    border-radius: var(--radius); padding: 14px;
+    margin-bottom: 12px; display: none;
+  }
+  #found-product h3 { font-size: 16px; color: var(--green); margin-bottom: 3px; }
+  #found-product .meta { font-size: 12px; color: var(--text-soft); margin-bottom: 12px; }
+  .current-stock {
+    display: flex; align-items: center;
+    background: white; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px;
+  }
+  .current-stock .label { font-size: 13px; color: var(--text-soft); }
+  .current-stock .value { font-size: 24px; font-weight: 800; color: var(--green); margin-left: auto; }
+
+  .qty-stepper {
+    display: flex; align-items: center;
+    border: 2px solid #ddd; border-radius: 8px; overflow: hidden;
+    margin-bottom: 10px; width: fit-content;
+  }
+  .qty-stepper button {
+    width: 44px; height: 44px; border: none; background: #f0f0f0;
+    font-size: 22px; cursor: pointer; font-weight: 600; color: var(--text);
+  }
+  .qty-stepper button:active { background: #ddd; }
+  .qty-stepper input {
+    width: 64px; text-align: center; border: none; outline: none;
+    font-size: 20px; font-weight: 700; padding: 4px 0;
+  }
+
+  /* ── INVENTORY PAGE ── */
+  .profit-card {
+    background: linear-gradient(135deg, var(--green) 0%, var(--green-light) 100%);
+    border-radius: var(--radius); color: white; padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  .profit-card h3 { font-size: 12px; opacity: 0.8; margin-bottom: 2px; }
+  .profit-card .amount { font-size: 28px; font-weight: 800; }
+  .profit-card .sub { font-size: 11px; opacity: 0.7; margin-top: 2px; }
+
+  .search-box {
+    width: 100%; padding: 10px 13px;
+    border: 2px solid #ddd; border-radius: 8px;
+    font-size: 14px; outline: none; margin-bottom: 10px; background: white;
+  }
+  .search-box:focus { border-color: var(--green); }
+
+  .filter-row {
+    display: flex; gap: 6px; margin-bottom: 10px;
+    overflow-x: auto; padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+  .filter-row::-webkit-scrollbar { display: none; }
+  .filter-pill {
+    padding: 5px 12px; border-radius: 20px;
+    border: 2px solid #ddd; background: white;
+    font-size: 11px; font-weight: 700; cursor: pointer;
+    white-space: nowrap; color: var(--text-soft);
+  }
+  .filter-pill.active { background: var(--green); color: white; border-color: var(--green); }
+
+  .product-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 14px; border-bottom: 1px solid #f0f0f0;
+    cursor: pointer; transition: background 0.1s;
+    -webkit-user-select: none;
+  }
+  .product-row:last-child { border-bottom: none; }
+  .product-row:active { background: var(--green-pale); }
+  .cat-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .product-row .name { flex: 1; font-size: 13px; font-weight: 600; line-height: 1.3; }
+  .product-row .unit { font-size: 11px; color: var(--text-soft); font-weight: 400; }
+  .stock-badge {
+    font-size: 13px; font-weight: 800;
+    padding: 3px 9px; border-radius: 6px; min-width: 30px; text-align: center;
+  }
+  .stock-ok { background: var(--green-pale); color: var(--green); }
+  .stock-low { background: #fff3cd; color: #856404; }
+  .stock-empty { background: var(--red-pale); color: var(--red); }
+
+  /* ── PRODUKTE PAGE ── */
+  .cat-section { margin-bottom: 8px; }
+  .cat-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 14px 6px;
+    font-size: 11px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.07em; color: var(--text-soft);
+    background: var(--cream);
+    border-bottom: 1px solid #eee;
+  }
+  .cat-header .cat-dot { width: 8px; height: 8px; }
+  .cat-header .count {
+    background: #eee; color: var(--text-soft);
+    font-size: 10px; border-radius: 10px;
+    padding: 1px 6px; margin-left: 2px;
+  }
+
+  .product-detail-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border-bottom: 1px solid #f5f5f5;
+    cursor: pointer; transition: background 0.1s;
+    -webkit-user-select: none;
+  }
+  .product-detail-row:last-child { border-bottom: none; }
+  .product-detail-row:active { background: #f5f5f5; }
+  .product-detail-row .pname { font-size: 13px; font-weight: 600; flex: 1; line-height: 1.3; }
+  .product-detail-row .pid { font-size: 10px; color: var(--text-soft); }
+  .price-tag {
+    text-align: right; flex-shrink: 0;
+  }
+  .price-tag .sell { font-size: 14px; font-weight: 800; color: var(--green); }
+  .price-tag .buy { font-size: 10px; color: var(--text-soft); }
+
+  /* PRODUCT DETAIL SLIDE-IN */
+  #detail-panel {
+    position: fixed; inset: 0; z-index: 200;
+    background: white; transform: translateX(100%);
+    transition: transform 0.25s ease;
+    overflow-y: auto;
+    padding-bottom: calc(var(--nav-h) + var(--safe-bottom) + 20px);
+  }
+  #detail-panel.open { transform: translateX(0); }
+  .detail-header {
+    background: var(--green); color: white;
+    padding: 14px 16px; display: flex; align-items: center; gap: 10px;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .detail-header button {
+    background: none; border: none; color: white;
+    font-size: 22px; cursor: pointer; padding: 0 4px;
+  }
+  .detail-header h2 { font-size: 16px; font-weight: 700; flex: 1; line-height: 1.2; }
+  .detail-body { padding: 16px; }
+  .detail-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 10px 0; border-bottom: 1px solid #f0f0f0;
+  }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-row .dlabel { font-size: 12px; color: var(--text-soft); }
+  .detail-row .dvalue { font-size: 15px; font-weight: 700; }
+  .detail-row .dvalue.highlight { color: var(--green); font-size: 18px; }
+  .detail-row .dvalue.red { color: var(--red); }
+  .barcode-display {
+    background: #f5f5f5; border-radius: 8px;
+    padding: 10px 14px; text-align: center; margin: 12px 0;
+  }
+  .barcode-display .bc-num { font-size: 18px; font-weight: 700; letter-spacing: 2px; font-family: monospace; }
+  .barcode-display .bc-label { font-size: 11px; color: var(--text-soft); margin-top: 2px; }
+  .profit-margin {
+    background: var(--green-pale); border-radius: 8px; padding: 12px 14px;
+    display: flex; justify-content: space-between; align-items: center;
+    margin: 12px 0;
+  }
+  .profit-margin .pm-label { font-size: 12px; color: var(--green); font-weight: 600; }
+  .profit-margin .pm-value { font-size: 20px; font-weight: 800; color: var(--green); }
+
+  /* ── ORDERS PAGE ── */
+  .order-banner {
+    background: linear-gradient(135deg, var(--earth) 0%, var(--earth-light) 100%);
+    border-radius: var(--radius); color: white; padding: 14px 16px;
+    margin-bottom: 12px; display: flex; align-items: center; gap: 12px;
+  }
+  .order-banner .icon { font-size: 26px; }
+  .order-banner h2 { font-size: 14px; font-weight: 700; }
+  .order-banner p { font-size: 11px; opacity: 0.85; }
+  .order-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border-bottom: 1px solid #f0f0f0;
+  }
+  .order-item:last-child { border-bottom: none; }
+  .order-item .name { flex: 1; font-size: 13px; font-weight: 600; }
+  .order-item .sub { font-size: 11px; color: var(--text-soft); }
+  .order-qty {
+    background: var(--earth); color: white;
+    font-size: 13px; font-weight: 800;
+    padding: 4px 10px; border-radius: 6px;
+  }
+
+  /* ── HISTORY PAGE ── */
+  .history-entry {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 11px 14px; border-bottom: 1px solid #f0f0f0;
+  }
+  .history-entry:last-child { border-bottom: none; }
+  .history-icon { font-size: 16px; margin-top: 2px; }
+  .history-entry .hname { font-size: 13px; font-weight: 600; }
+  .history-entry .hwhen { font-size: 11px; color: var(--text-soft); }
+  .history-entry .change { margin-left: auto; font-size: 14px; font-weight: 800; text-align: right; white-space: nowrap; }
+  .change-neg { color: var(--red); }
+  .change-set { color: var(--green); }
+
+  /* ── MODALS ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45); z-index: 200;
+    align-items: flex-end; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: white; border-radius: 18px 18px 0 0;
+    padding: 20px 18px calc(20px + var(--safe-bottom));
+    width: 100%; max-width: 520px;
+    animation: slideUp 0.22s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 3px; color: var(--green); }
+  .modal .modal-meta { font-size: 12px; color: var(--text-soft); margin-bottom: 14px; }
+
+  /* TOAST */
+  #toast {
+    position: fixed; bottom: calc(var(--nav-h) + var(--safe-bottom) + 10px);
+    left: 50%; transform: translateX(-50%);
+    background: #1b1b1b; color: white;
+    padding: 9px 18px; border-radius: 20px;
+    font-size: 13px; font-weight: 600;
+    opacity: 0; pointer-events: none; transition: opacity 0.25s;
+    z-index: 400; white-space: nowrap;
+  }
+  #toast.show { opacity: 1; }
+
+  .empty-state {
+    text-align: center; padding: 36px 20px; color: var(--text-soft);
+  }
+  .empty-state .icon { font-size: 36px; margin-bottom: 8px; }
+  .empty-state p { font-size: 13px; }
+
+  .section-title {
+    font-size: 11px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.07em; color: var(--text-soft); margin-bottom: 8px;
+  }
+
+  /* CATEGORY COLORS */
+  .cat-TEE { background: #52b788; }
+  .cat-KAFFEE { background: #6f4e37; }
+  .cat-KAKAO { background: #8b5e3c; }
+  .cat-SCHOKOLADE { background: #c77dff; }
+  .cat-SNACKS { background: #f4a261; }
+  .cat-ZUCKER { background: #e9c46a; }
+  .cat-REIS { background: #4db6ac; }
+  .cat-HONIG { background: #ffd166; }
+  .cat-GEBÄCK { background: #ef476f; }
+</style>
+</head>
+<body>
+
+<!-- PWA INSTALL BANNER (iOS) -->
+<div id="install-banner">
+  <span>📲 Als App installieren: Teilen → „Zum Homescreen"</span>
+  <button onclick="document.getElementById('install-banner').classList.remove('show')">✕</button>
+</div>
+
+<header>
+  <span class="logo">🌍</span>
+  <h1>Eine Welt Verkauf <span>Fair-Trade Inventar</span></h1>
+</header>
+
+<!-- SCAN PAGE -->
+<div class="page active" id="page-scan">
+  <div class="scan-zone">
+    <h2>📷 Barcode scannen oder eingeben</h2>
+    <p>Scanne einen Barcode oder gib ihn manuell ein, um den Bestand nach dem Verkauf festzuhalten.</p>
+    <div class="barcode-input-row">
+      <input type="text" id="barcode-field" placeholder="Barcode eingeben…"
+             inputmode="numeric" autocomplete="off"
+             onkeydown="if(event.key==='Enter') lookupBarcode()">
+      <button class="camera-btn" onclick="startScan()">📷</button>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="lookupBarcode()">Produkt suchen</button>
+  </div>
+
+  <div id="not-found"><p>⚠️ Kein Produkt mit diesem Barcode gefunden.</p></div>
+
+  <div id="found-product">
+    <h3 id="fp-name"></h3>
+    <div class="meta" id="fp-meta"></div>
+    <div class="current-stock">
+      <div><div class="label">Aktueller Bestand</div></div>
+      <div class="value" id="fp-stock">—</div>
+    </div>
+    <div style="font-size:13px; font-weight:600; margin-bottom:8px;">Neuer Bestand nach Verkauf:</div>
+    <div class="qty-stepper">
+      <button onclick="changeQty(-1)">−</button>
+      <input type="number" id="new-qty" value="0" min="0">
+      <button onclick="changeQty(1)">+</button>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="saveStock()">✓ Bestand speichern</button>
+    <button class="btn btn-ghost btn-full" onclick="clearScan()" style="margin-top:6px;">Abbrechen</button>
+  </div>
+</div>
+
+<!-- INVENTORY PAGE -->
+<div class="page" id="page-inventory">
+  <div class="profit-card">
+    <h3>Geschätzter Gesamtgewinn im Lager</h3>
+    <div class="amount" id="profit-amount">€0,00</div>
+    <div class="sub">Verkaufspreis minus Einkaufspreis · aktueller Bestand</div>
+  </div>
+  <input class="search-box" type="search" placeholder="Produkt suchen…" oninput="renderInventory()" id="inv-search">
+  <div class="filter-row" id="cat-filter-inv"></div>
+  <div class="card" style="overflow:hidden;">
+    <div id="inventory-list"></div>
+  </div>
+</div>
+
+<!-- PRODUKTE PAGE -->
+<div class="page" id="page-products">
+  <input class="search-box" type="search" placeholder="Produkt suchen…" oninput="renderProducts()" id="prod-search">
+  <div class="filter-row" id="cat-filter-prod"></div>
+  <div id="products-list"></div>
+</div>
+
+<!-- ORDERS PAGE -->
+<div class="page" id="page-orders">
+  <div class="order-banner">
+    <span class="icon">🛒</span>
+    <div><h2>Bestellliste</h2><p>Artikel unter Mindestbestand</p></div>
+  </div>
+  <div class="card" style="overflow:hidden;"><div id="order-list"></div></div>
+  <button class="btn btn-earth btn-full" style="margin-top:12px;" onclick="copyOrderList()">📋 Bestellliste kopieren</button>
+</div>
+
+<!-- HISTORY PAGE -->
+<div class="page" id="page-history">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+    <div class="section-title" style="margin:0;">Letzte Änderungen</div>
+    <button class="btn btn-ghost" style="font-size:12px; padding:6px 12px;" onclick="clearHistory()">Löschen</button>
+  </div>
+  <div class="card" style="overflow:hidden;"><div id="history-list"></div></div>
+
+  <div class="card card-pad" style="margin-top:16px; border: 2px solid var(--sand);">
+    <div class="section-title">📲 App aktualisieren</div>
+    <p style="font-size:13px; color:var(--text-soft); line-height:1.6;">
+      Wenn Claude eine neue Version der App schickt:<br><br>
+      <b>GitHub (empfohlen):</b> Neue Datei als <code>index.html</code> in dein Repository hochladen → alte ersetzen → fertig. Die App lädt beim nächsten Öffnen automatisch neu.<br><br>
+      <b>Ohne GitHub:</b> Neue HTML-Datei in Safari öffnen → Teilen → „Zum Home-Bildschirm" → altes Icon löschen.
+    </p>
+    <div style="margin-top:10px; padding:10px 12px; background:var(--green-pale); border-radius:8px;">
+      <div style="font-size:12px; color:var(--green); font-weight:700; margin-bottom:4px;">⚠️ Wichtig beim Update</div>
+      <div style="font-size:12px; color:var(--text-soft);">Deine Bestände sind im Browser-Speicher (localStorage) gesichert. Solange du auf demselben Gerät / Browser bleibst, bleiben sie erhalten – auch nach einem Update.</div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav>
+  <button class="active" onclick="showPage('scan')">
+    <span class="nav-icon">📷</span>Scannen
+  </button>
+  <button onclick="showPage('inventory')">
+    <span class="nav-icon">📦</span>Bestand
+  </button>
+  <button onclick="showPage('products')">
+    <span class="nav-icon">🏷️</span>Produkte
+  </button>
+  <button onclick="showPage('orders')">
+    <span class="nav-icon">🛒</span>Bestellung
+  </button>
+  <button onclick="showPage('history')">
+    <span class="nav-icon">📋</span>Verlauf
+  </button>
+</nav>
+
+<!-- MODAL: Bestand anpassen (aus Inventory-Liste) -->
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <h3 id="modal-name"></h3>
+    <div class="modal-meta" id="modal-meta"></div>
+    <div class="current-stock" style="margin-bottom:12px;">
+      <div><div class="label">Aktueller Bestand</div></div>
+      <div class="value" id="modal-stock"></div>
+    </div>
+    <div style="font-size:13px; font-weight:600; margin-bottom:8px;">Neuer Bestand:</div>
+    <div class="qty-stepper">
+      <button onclick="changeModalQty(-1)">−</button>
+      <input type="number" id="modal-qty" value="0" min="0">
+      <button onclick="changeModalQty(1)">+</button>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="saveModalStock()">✓ Speichern</button>
+    <button class="btn btn-ghost btn-full" style="margin-top:8px;" onclick="document.getElementById('modal-overlay').classList.remove('open')">Abbrechen</button>
+  </div>
+</div>
+
+<!-- PRODUCT DETAIL SLIDE-IN PANEL -->
+<div id="detail-panel">
+  <div class="detail-header">
+    <button onclick="closeDetail()">‹</button>
+    <h2 id="dp-name">Produktdetails</h2>
+  </div>
+  <div class="detail-body" id="dp-body"></div>
+</div>
+
+<!-- CAMERA SCANNER MODAL -->
+<div class="modal-overlay" id="scanner-overlay">
+  <div class="modal">
+    <h3>📷 Barcode scannen</h3>
+    <p style="font-size:12px; color:var(--text-soft); margin-bottom:12px;">Halte die Kamera über den Barcode.</p>
+    <div style="border-radius:8px; overflow:hidden; background:#000; min-height:180px; display:flex; align-items:center; justify-content:center;">
+      <video id="scanner-video" style="width:100%; display:block;" autoplay playsinline></video>
+    </div>
+    <p id="scan-status" style="font-size:12px; color:var(--text-soft); text-align:center; margin-top:8px;">Kamera wird gestartet…</p>
+    <button class="btn btn-ghost btn-full" style="margin-top:12px;" onclick="stopScan()">Schließen</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+<script>
+const PRODUCTS = [
+  { id: "204-8880992", name: "Bio Rooibos Tee TB", cat: "TEE", unit: "20x2 g", buyNet: 2.71, buyGross: 2.90, sell: 3.50, vat: 7, min: 5, order: 5, barcode: "4013320012529" },
+  { id: "204-8880991", name: "Bio Früchte Tee TB", cat: "TEE", unit: "20x2 g", buyNet: 2.71, buyGross: 2.90, sell: 3.50, vat: 7, min: 5, order: 5, barcode: "" },
+  { id: "204-8880953", name: "Bio Schwarztee Earl Grey TB", cat: "TEE", unit: "20x1,7 g", buyNet: 2.61, buyGross: 2.79, sell: 3.50, vat: 7, min: 5, order: 5, barcode: "4013320013083" },
+  { id: "204-8880947", name: "Bio Grüntee Ceylon TB", cat: "TEE", unit: "20x2 g", buyNet: 2.61, buyGross: 2.79, sell: 3.50, vat: 7, min: 5, order: 5, barcode: "" },
+  { id: "204-8880928", name: "Bio Grüntee Darjeeling", cat: "TEE", unit: "100 g", buyNet: 5.23, buyGross: 5.60, sell: 7.00, vat: 7, min: 3, order: 5, barcode: "" },
+  { id: "204-8880932", name: "Bio Schwarztee Earl Grey", cat: "TEE", unit: "100 g", buyNet: 5.75, buyGross: 6.15, sell: 7.00, vat: 7, min: 3, order: 5, barcode: "4013320015391" },
+  { id: "204-8880952", name: "Bio Schwarztee Ceylon TB", cat: "TEE", unit: "20x2 g", buyNet: 2.61, buyGross: 2.79, sell: 3.50, vat: 7, min: 5, order: 5, barcode: "4013320013045" },
+  { id: "204-3050901", name: "Bio Café Orgánico gemahlen", cat: "KAFFEE", unit: "250 g", buyNet: 6.08, buyGross: 6.51, sell: 7.50, vat: 7, min: 6, order: 6, barcode: "4013320035009" },
+  { id: "204-3050902", name: "Bio Café Orgánico entkoffeiniert", cat: "KAFFEE", unit: "250 g", buyNet: 6.51, buyGross: 6.97, sell: 7.50, vat: 7, min: 4, order: 6, barcode: "4013320035016" },
+  { id: "204-3050903", name: "Bio Orgánico Caffè Crema Bohnen", cat: "KAFFEE", unit: "500 g", buyNet: 11.99, buyGross: 12.83, sell: 14.00, vat: 7, min: 3, order: 6, barcode: "4013320034453" },
+  { id: "204-3050904", name: "Bio Orgánico Espresso Crema Bohnen", cat: "KAFFEE", unit: "500 g", buyNet: 11.99, buyGross: 12.83, sell: 14.00, vat: 7, min: 3, order: 6, barcode: "4013320034491" },
+  { id: "204-8910911", name: "Espresso Cargado gemahlen", cat: "KAFFEE", unit: "250 g", buyNet: 5.90, buyGross: 6.31, sell: 7.50, vat: 7, min: 4, order: 6, barcode: "4013320031636" },
+  { id: "204-8911807", name: "Bio Cacao Pur Afrika", cat: "KAKAO", unit: "250 g", buyNet: 5.17, buyGross: 5.53, sell: 6.00, vat: 7, min: 4, order: 6, barcode: "4013320090671" },
+  { id: "204-8911874", name: "Bio Cocoba", cat: "KAKAO", unit: "400 g", buyNet: 4.52, buyGross: 4.84, sell: 5.50, vat: 7, min: 4, order: 6, barcode: "4013320093115" },
+  { id: "204-8961847", name: "Bio Double Milk Fairness", cat: "SCHOKOLADE", unit: "37,5 g", buyNet: 1.19, buyGross: 1.27, sell: 2.00, vat: 7, min: 10, order: 18, barcode: "" },
+  { id: "204-8961845", name: "Bio Yogurt & Crisp Fairness", cat: "SCHOKOLADE", unit: "45 g", buyNet: 1.19, buyGross: 1.27, sell: 2.00, vat: 7, min: 10, order: 18, barcode: "4013320098783" },
+  { id: "204-8961841", name: "Bio Quinoa Crisp Fairness", cat: "SCHOKOLADE", unit: "45 g", buyNet: 1.34, buyGross: 1.43, sell: 2.00, vat: 7, min: 8, order: 11, barcode: "" },
+  { id: "204-8961840", name: "Bio Cookies & Choc Fairness", cat: "SCHOKOLADE", unit: "45 g", buyNet: 0.74, buyGross: 0.79, sell: 2.00, vat: 7, min: 8, order: 10, barcode: "" },
+  { id: "204-896183501", name: "Bio Schutzengel Vollmilch", cat: "SCHOKOLADE", unit: "100 g", buyNet: 2.46, buyGross: 2.63, sell: 3.50, vat: 7, min: 8, order: 10, barcode: "4013320099377" },
+  { id: "204-8901859", name: "Edelbitter 85% NL", cat: "SCHOKOLADE", unit: "100 g", buyNet: 3.28, buyGross: 3.51, sell: 4.00, vat: 7, min: 8, order: 10, barcode: "4013320066379" },
+  { id: "204-8901860", name: "Zarte Bitter 70% NL", cat: "SCHOKOLADE", unit: "100 g", buyNet: 3.28, buyGross: 3.51, sell: 4.00, vat: 7, min: 8, order: 10, barcode: "4013320066393" },
+  { id: "204-8901820", name: "Praliné NL Fair", cat: "SCHOKOLADE", unit: "100 g", buyNet: 3.03, buyGross: 3.24, sell: 4.00, vat: 7, min: 8, order: 10, barcode: "4013320115145" },
+  { id: "204-8951805", name: "Haselnuss NL Fair", cat: "SCHOKOLADE", unit: "100 g", buyNet: 3.03, buyGross: 3.24, sell: 4.00, vat: 7, min: 8, order: 10, barcode: "4013320185667" },
+  { id: "204-8961881", name: "Bio Nougat Schokolade", cat: "SCHOKOLADE", unit: "100 g", buyNet: 2.46, buyGross: 2.63, sell: 4.00, vat: 7, min: 8, order: 10, barcode: "" },
+  { id: "204-8961882", name: "Bio Weiße Schokolade", cat: "SCHOKOLADE", unit: "100 g", buyNet: 2.71, buyGross: 2.90, sell: 3.50, vat: 7, min: 8, order: 10, barcode: "4013320099261" },
+  { id: "204-7740801", name: "Mangos ungeschwefelt", cat: "SNACKS", unit: "100 g", buyNet: 3.47, buyGross: 3.71, sell: 4.00, vat: 7, min: 6, order: 10, barcode: "" },
+  { id: "203-PY3-10-213", name: "Bio Bärenfamily Fruchtgummi", cat: "SNACKS", unit: "100 g", buyNet: 1.56, buyGross: 1.67, sell: 2.50, vat: 7, min: 6, order: 10, barcode: "4030254333001" },
+  { id: "203-py3-10-219", name: "Zootiere wild & sauer", cat: "SNACKS", unit: "100 g", buyNet: 1.56, buyGross: 1.67, sell: 2.50, vat: 7, min: 6, order: 10, barcode: "4030254387134" },
+  { id: "204-7751708", name: "Bio Mascobado", cat: "ZUCKER", unit: "500 g", buyNet: 4.43, buyGross: 4.74, sell: 5.00, vat: 7, min: 3, order: 5, barcode: "4013320107195" },
+  { id: "204-8481006", name: "Bio Basmati Reis weiß", cat: "REIS", unit: "500 g", buyNet: 3.73, buyGross: 3.99, sell: 4.50, vat: 7, min: 4, order: 8, barcode: "4013320296004" },
+  { id: "204-7501007", name: "Bio Hom Mali Vollwertreis", cat: "REIS", unit: "500 g", buyNet: 2.94, buyGross: 3.15, sell: 4.00, vat: 7, min: 4, order: 8, barcode: "" },
+  { id: "204-8910421", name: "Bio Mexiko Länderhonig cremig", cat: "HONIG", unit: "500 g", buyNet: 6.16, buyGross: 6.59, sell: 7.50, vat: 7, min: 3, order: 6, barcode: "4013320092279" },
+  { id: "204-8911936", name: "Bio Crossita", cat: "SCHOKOLADE", unit: "40 g", buyNet: 1.31, buyGross: 1.40, sell: 2.00, vat: 7, min: 6, order: 12, barcode: "4013320009789" },
+  { id: "204-8951802", name: "Vollmilch Pur 37% NL Fair", cat: "SCHOKOLADE", unit: "100 g", buyNet: 2.71, buyGross: 2.90, sell: 3.50, vat: 7, min: 8, order: 10, barcode: "4013320185605" },
+  { id: "204-8961872", name: "Bio Joghurt Erdbeer Schokolade", cat: "SCHOKOLADE", unit: "80 g", buyNet: 2.87, buyGross: 3.07, sell: 4.00, vat: 7, min: 8, order: 10, barcode: "4013320033319" },
+  { id: "204-8901858", name: "Zarte Bitter Orange NL 70%", cat: "SCHOKOLADE", unit: "100 g", buyNet: 3.28, buyGross: 3.51, sell: 4.00, vat: 7, min: 8, order: 10, barcode: "" },
+  { id: "204-8951827", name: "Cacao Nibs 70% NL", cat: "SCHOKOLADE", unit: "100 g", buyNet: 3.28, buyGross: 3.51, sell: 4.00, vat: 7, min: 8, order: 10, barcode: "" },
+  { id: "204-8961813", name: "Sao Tomé 95% NL", cat: "SCHOKOLADE", unit: "80 g", buyNet: 3.28, buyGross: 3.51, sell: 4.00, vat: 7, min: 6, order: 10, barcode: "4013320296677" },
+  { id: "204-8911934", name: "Bio Mandel Heidesand", cat: "GEBÄCK", unit: "125 g", buyNet: 2.16, buyGross: 2.31, sell: 3.00, vat: 7, min: 4, order: 5, barcode: "4013320331606" },
+  { id: "204-8951861", name: "Bio Schoko Espressobohnen", cat: "SCHOKOLADE", unit: "100 g", buyNet: 2.46, buyGross: 2.63, sell: 3.50, vat: 7, min: 6, order: 10, barcode: "" },
+];
+
+const CATEGORIES = [...new Set(PRODUCTS.map(p => p.cat))];
+const fmt = n => n.toFixed(2).replace('.', ',');
+
+// ── STATE ──
+let state = { stock: {}, history: [], activeCategory: '', activeCategoryInv: '', activeCategoryProd: '' };
+
+function loadState() {
+  try { const s = localStorage.getItem('ewv2_state'); if (s) state = { ...state, ...JSON.parse(s) }; } catch(e) {}
+}
+function saveState() {
+  try { localStorage.setItem('ewv2_state', JSON.stringify(state)); } catch(e) {}
+}
+function getStock(id) { return state.stock[id] ?? 0; }
+function setStock(id, qty) {
+  const old = getStock(id);
+  state.stock[id] = qty;
+  const p = PRODUCTS.find(x => x.id === id);
+  state.history.unshift({ id, name: p?.name || id, old, qty, ts: new Date().toISOString() });
+  if (state.history.length > 300) state.history = state.history.slice(0, 300);
+  saveState();
+}
+
+// ── NAV ──
+const PAGES = ['scan','inventory','products','orders','history'];
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll('nav button').forEach((b, i) => b.classList.toggle('active', PAGES[i] === name));
+  if (name === 'inventory') renderInventory();
+  if (name === 'products') renderProducts();
+  if (name === 'orders') renderOrders();
+  if (name === 'history') renderHistory();
+}
+
+// ── SCAN ──
+let currentProduct = null;
+
+function lookupBarcode() {
+  const val = document.getElementById('barcode-field').value.trim();
+  if (!val) return;
+  const p = PRODUCTS.find(x => x.barcode === val || x.id === val);
+  document.getElementById('not-found').style.display = 'none';
+  document.getElementById('found-product').style.display = 'none';
+  if (!p) { document.getElementById('not-found').style.display = 'block'; return; }
+  currentProduct = p;
+  const stock = getStock(p.id);
+  document.getElementById('fp-name').textContent = p.name;
+  document.getElementById('fp-meta').textContent = `${p.cat} · ${p.unit} · EK brutto: ${fmt(p.buyGross)} € · VK: ${fmt(p.sell)} €`;
+  document.getElementById('fp-stock').textContent = stock;
+  document.getElementById('new-qty').value = stock;
+  document.getElementById('found-product').style.display = 'block';
+}
+
+function changeQty(d) {
+  const el = document.getElementById('new-qty');
+  el.value = Math.max(0, parseInt(el.value || 0) + d);
+}
+function saveStock() {
+  if (!currentProduct) return;
+  const qty = parseInt(document.getElementById('new-qty').value) || 0;
+  setStock(currentProduct.id, qty);
+  showToast(`✓ ${currentProduct.name}: ${qty} Stück`);
+  clearScan();
+}
+function clearScan() {
+  currentProduct = null;
+  document.getElementById('barcode-field').value = '';
+  document.getElementById('found-product').style.display = 'none';
+  document.getElementById('not-found').style.display = 'none';
+}
+
+// ── BARCODE SCANNER ──
+let scanning = false;
+function startScan() {
+  document.getElementById('scanner-overlay').classList.add('open');
+  document.getElementById('scan-status').textContent = 'Kamera wird gestartet…';
+  scanning = true;
+  Quagga.init({
+    inputStream: { type: "LiveStream", target: document.getElementById('scanner-video'),
+      constraints: { facingMode: "environment", width: 640, height: 480 } },
+    decoder: { readers: ["ean_reader","ean_8_reader","code_128_reader","upc_reader"] }
+  }, err => {
+    if (err) { document.getElementById('scan-status').textContent = 'Kamera nicht verfügbar – manuell eingeben.'; return; }
+    document.getElementById('scan-status').textContent = 'Kamera bereit – Barcode scannen…';
+    Quagga.start();
+  });
+  Quagga.onDetected(r => {
+    if (!scanning) return;
+    stopScan();
+    document.getElementById('barcode-field').value = r.codeResult.code;
+    lookupBarcode();
+  });
+}
+function stopScan() {
+  scanning = false;
+  try { Quagga.stop(); } catch(e) {}
+  document.getElementById('scanner-overlay').classList.remove('open');
+}
+
+// ── INVENTORY ──
+function buildCategoryFilter(elId, stateKey, cb) {
+  const row = document.getElementById(elId);
+  row.innerHTML = `<button class="filter-pill active" onclick="${cb}('')">Alle</button>`;
+  CATEGORIES.forEach(cat => {
+    const b = document.createElement('button');
+    b.className = 'filter-pill';
+    b.textContent = cat;
+    b.onclick = () => { state[stateKey] = cat; updatePills(elId, cat); cb(cat); };
+    row.appendChild(b);
+  });
+}
+function updatePills(elId, cat) {
+  document.querySelectorAll(`#${elId} .filter-pill`).forEach(b =>
+    b.classList.toggle('active', b.textContent === (cat || 'Alle'))
+  );
+}
+
+function renderInventory() {
+  const search = (document.getElementById('inv-search')?.value || '').toLowerCase();
+  const cat = state.activeCategoryInv;
+  const products = PRODUCTS.filter(p =>
+    (!cat || p.cat === cat) &&
+    (!search || p.name.toLowerCase().includes(search) || p.barcode?.includes(search))
+  );
+  const list = document.getElementById('inventory-list');
+  if (!products.length) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>Keine Produkte.</p></div>'; return;
+  }
+  list.innerHTML = products.map(p => {
+    const s = getStock(p.id);
+    const cls = s === 0 ? 'stock-empty' : s < p.min ? 'stock-low' : 'stock-ok';
+    return `<div class="product-row" onclick="openModal('${p.id}')">
+      <span class="cat-dot cat-${p.cat}"></span>
+      <div class="name">${p.name}<br><span class="unit">${p.unit}</span></div>
+      <span class="stock-badge ${cls}">${s}</span>
+    </div>`;
+  }).join('');
+  let profit = 0;
+  PRODUCTS.forEach(p => profit += getStock(p.id) * (p.sell - p.buyGross));
+  document.getElementById('profit-amount').textContent = '€' + fmt(profit);
+}
+
+// ── INVENTORY MODAL ──
+let modalProductId = null;
+function openModal(id) {
+  const p = PRODUCTS.find(x => x.id === id);
+  if (!p) return;
+  modalProductId = id;
+  const s = getStock(id);
+  document.getElementById('modal-name').textContent = p.name;
+  document.getElementById('modal-meta').textContent = `${p.cat} · ${p.unit} · VK: ${fmt(p.sell)} € · Mind.: ${p.min}`;
+  document.getElementById('modal-stock').textContent = s;
+  document.getElementById('modal-qty').value = s;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function changeModalQty(d) {
+  const el = document.getElementById('modal-qty');
+  el.value = Math.max(0, parseInt(el.value || 0) + d);
+}
+function saveModalStock() {
+  if (!modalProductId) return;
+  const qty = parseInt(document.getElementById('modal-qty').value) || 0;
+  setStock(modalProductId, qty);
+  document.getElementById('modal-overlay').classList.remove('open');
+  showToast('✓ Bestand gespeichert');
+  renderInventory();
+}
+
+// ── PRODUCTS PAGE ──
+function renderProducts() {
+  const search = (document.getElementById('prod-search')?.value || '').toLowerCase();
+  const cat = state.activeCategoryProd || '';
+  const container = document.getElementById('products-list');
+  const byCat = {};
+  PRODUCTS.forEach(p => {
+    if (cat && p.cat !== cat) return;
+    if (search && !p.name.toLowerCase().includes(search) && !p.id.toLowerCase().includes(search)) return;
+    if (!byCat[p.cat]) byCat[p.cat] = [];
+    byCat[p.cat].push(p);
+  });
+  const cats = Object.keys(byCat);
+  if (!cats.length) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>Keine Produkte gefunden.</p></div>'; return;
+  }
+  container.innerHTML = cats.map(cat => `
+    <div class="card" style="overflow:hidden; margin-bottom:10px;">
+      <div class="cat-header">
+        <span class="cat-dot cat-${cat}"></span>
+        ${cat} <span class="count">${byCat[cat].length}</span>
+      </div>
+      ${byCat[cat].map(p => `
+        <div class="product-detail-row" onclick="openDetail('${p.id}')">
+          <div>
+            <div class="pname">${p.name}</div>
+            <div class="pid">${p.id}${p.barcode ? ' · ' + p.barcode : ''}</div>
+          </div>
+          <div class="price-tag">
+            <div class="sell">${fmt(p.sell)} €</div>
+            <div class="buy">EK ${fmt(p.buyGross)} €</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+function openDetail(id) {
+  const p = PRODUCTS.find(x => x.id === id);
+  if (!p) return;
+  const margin = p.sell - p.buyGross;
+  const marginPct = (margin / p.buyGross * 100);
+  document.getElementById('dp-name').textContent = p.name;
+  document.getElementById('dp-body').innerHTML = `
+    <div class="profit-margin">
+      <div class="pm-label">Gewinn pro Stück</div>
+      <div class="pm-value">+${fmt(margin)} € <span style="font-size:13px; font-weight:600">(${marginPct.toFixed(0)}%)</span></div>
+    </div>
+    ${p.barcode ? `<div class="barcode-display"><div class="bc-num">${p.barcode}</div><div class="bc-label">EAN Barcode</div></div>` : ''}
+    <div class="card card-pad" style="margin-top:0;">
+      <div class="detail-row"><span class="dlabel">Produktname</span><span class="dvalue">${p.name}</span></div>
+      <div class="detail-row"><span class="dlabel">Artikelnummer</span><span class="dvalue">${p.id}</span></div>
+      <div class="detail-row"><span class="dlabel">Kategorie</span><span class="dvalue">${p.cat}</span></div>
+      <div class="detail-row"><span class="dlabel">Inhalt / Einheit</span><span class="dvalue">${p.unit}</span></div>
+      <div class="detail-row"><span class="dlabel">Einkaufspreis (netto)</span><span class="dvalue">${fmt(p.buyNet)} €</span></div>
+      <div class="detail-row"><span class="dlabel">MwSt-Satz</span><span class="dvalue">${p.vat} %</span></div>
+      <div class="detail-row"><span class="dlabel">Einkaufspreis (brutto)</span><span class="dvalue">${fmt(p.buyGross)} €</span></div>
+      <div class="detail-row"><span class="dlabel">Verkaufspreis</span><span class="dvalue highlight">${fmt(p.sell)} €</span></div>
+      <div class="detail-row"><span class="dlabel">Mindestbestand</span><span class="dvalue">${p.min}</span></div>
+      <div class="detail-row"><span class="dlabel">Standard-Bestellmenge</span><span class="dvalue">${p.order}</span></div>
+      <div class="detail-row"><span class="dlabel">Aktueller Bestand</span><span class="dvalue ${getStock(p.id) < p.min ? 'red' : ''}">${getStock(p.id)} Stück</span></div>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="openModalFromDetail('${p.id}')">✏️ Bestand anpassen</button>
+  `;
+  document.getElementById('detail-panel').classList.add('open');
+}
+
+function openModalFromDetail(id) {
+  closeDetail();
+  setTimeout(() => openModal(id), 260);
+}
+
+function closeDetail() {
+  document.getElementById('detail-panel').classList.remove('open');
+}
+
+// ── ORDERS ──
+function renderOrders() {
+  const items = PRODUCTS.filter(p => getStock(p.id) < p.min);
+  const list = document.getElementById('order-list');
+  if (!items.length) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">✅</div><p>Alles ausreichend auf Lager!</p></div>'; return;
+  }
+  list.innerHTML = items.map(p => `
+    <div class="order-item">
+      <div>
+        <div class="name">${p.name}</div>
+        <div class="sub">${p.unit} · Bestand: ${getStock(p.id)} / Mind.: ${p.min}</div>
+      </div>
+      <span class="order-qty">${p.order}×</span>
+    </div>
+  `).join('');
+}
+
+function copyOrderList() {
+  const items = PRODUCTS.filter(p => getStock(p.id) < p.min);
+  if (!items.length) { showToast('Nichts zu bestellen!'); return; }
+  const text = '🌍 Eine Welt Verkauf – Bestellliste\n' + new Date().toLocaleDateString('de-DE') + '\n\n' +
+    items.map(p => `• ${p.name} (${p.unit}) – ${p.order}× [Bestand: ${getStock(p.id)}]`).join('\n');
+  navigator.clipboard?.writeText(text).then(() => showToast('📋 Liste kopiert!'));
+}
+
+// ── HISTORY ──
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  if (!state.history.length) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>Noch keine Einträge.</p></div>'; return;
+  }
+  list.innerHTML = state.history.map(h => {
+    const diff = h.qty - h.old;
+    const sign = diff > 0 ? '+' : '';
+    const cls = diff < 0 ? 'change-neg' : 'change-set';
+    const icon = diff < 0 ? '📉' : diff > 0 ? '📈' : '✏️';
+    const dt = new Date(h.ts).toLocaleString('de-DE', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+    return `<div class="history-entry">
+      <span class="history-icon">${icon}</span>
+      <div><div class="hname">${h.name}</div><div class="hwhen">${dt} · vorher: ${h.old}</div></div>
+      <span class="change ${cls}">${sign}${diff} → ${h.qty}</span>
+    </div>`;
+  }).join('');
+}
+
+function clearHistory() {
+  if (!confirm('Verlauf wirklich löschen?')) return;
+  state.history = [];
+  saveState();
+  renderHistory();
+}
+
+// ── TOAST ──
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── iOS INSTALL BANNER ──
+function isIOS() { return /iphone|ipad|ipod/i.test(navigator.userAgent); }
+function isInStandaloneMode() { return window.navigator.standalone === true; }
+if (isIOS() && !isInStandaloneMode()) {
+  document.getElementById('install-banner').classList.add('show');
+}
+
+// ── INVENTUR-IMPORT (einmalig beim ersten Start) ──
+const INVENTUR = {
+  // KAFFEE
+  "204-3050904": 11,  // Bio Orgánico Espresso Crema Bohnen
+  "204-3050903": 11,  // Bio Orgánico Caffè Crema Bohnen
+  "204-3050901": 0,   // Bio Café Orgánico gemahlen (keine Zahl in Notiz → 0)
+  "204-3050902": 8,   // Bio Café Orgánico entkoffeiniert
+  "204-8910911": 6,   // Espresso Cargado gemahlen
+  // KAKAO
+  "204-8911807": 0,   // Bio Cacao Pur Afrika ("Caba 0")
+  // SNACKS
+  "204-7740801": 8,   // Mangos ungeschwefelt
+  "203-PY3-10-213": 0, // Bio Bärenfamily Fruchtgummi
+  "203-py3-10-219": 0, // Zootiere wild & sauer
+  // HONIG
+  "204-8910421": 2,   // Bio Mexiko Länderhonig cremig
+  // ZUCKER
+  "204-7751708": 0,   // Bio Mascobado
+  // TEE
+  "204-8880991": 0,   // Bio Früchte Tee TB (keine Zahl → 0)
+  "204-8880952": 0,   // Bio Schwarztee Ceylon TB (keine Zahl → 0)
+  "204-8880947": 0,   // Bio Grüntee Ceylon TB (keine Zahl → 0)
+  "204-8880992": 0,   // Bio Rooibos Tee TB (keine Zahl → 0)
+  "204-8880953": 0,   // Bio Schwarztee Earl Grey TB (keine Zahl → 0)
+  "204-8880932": 6,   // Bio Schwarztee Earl Grey (Aufgießtee)
+  "204-8880928": 6,   // Bio Grüntee Darjeeling (Aufgießtee)
+  // SCHOKOLADE
+  "204-8951802": 4,   // Vollmilch Pur 37% NL Fair
+  "204-8951805": 3,   // Haselnuss NL Fair
+  "204-8961872": 7,   // Bio Joghurt Erdbeer Schokolade
+  "204-8961881": 0,   // Bio Nougat Schokolade (keine Zahl)
+  "204-896183501": 12,// Bio Schutzengel Vollmilch
+  "204-8901859": 6,   // Edelbitter 85% NL
+  "204-8901858": 5,   // Zarte Bitter Orange NL 70%
+  "204-8961882": 9,   // Bio Weiße Schokolade
+  "204-8951827": 11,  // Cacao Nibs 70% NL
+  "204-8961847": 4,   // Bio Double Milk Fairness (Riegel 4)
+  "204-8911936": 0,   // Bio Crossita (Hanuta 0)
+  "204-8951861": 5,   // Bio Schoko Espressobohnen
+  // REIS
+  "204-8481006": 8,   // Bio Basmati Reis weiß
+};
+
+function applyInventur() {
+  const ts = new Date().toISOString();
+  Object.entries(INVENTUR).forEach(([id, qty]) => {
+    const old = getStock(id);
+    state.stock[id] = qty;
+    const p = PRODUCTS.find(x => x.id === id);
+    state.history.unshift({ id, name: p?.name || id, old, qty, ts, note: 'Inventur-Import' });
+  });
+  saveState();
+  showToast('✓ Inventur importiert!');
+  renderInventory();
+  renderProducts();
+}
+
+// ── INIT ──
+loadState();
+
+// Einmaligen Inventur-Import anbieten wenn noch kein Bestand vorhanden
+const hasStock = Object.keys(state.stock).length > 0;
+if (!hasStock) {
+  applyInventur();
+}
+
+buildCategoryFilter('cat-filter-inv', 'activeCategoryInv', cat => { state.activeCategoryInv = cat; renderInventory(); });
+buildCategoryFilter('cat-filter-prod', 'activeCategoryProd', cat => { state.activeCategoryProd = cat; renderProducts(); });
+renderInventory();
+renderProducts();
+</script>
+</body>
+</html>
