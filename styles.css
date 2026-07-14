@@ -477,3 +477,24 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   nav button .nav-icon { font-size: 20px; }
   .session-actions { flex-direction: column; }
 }
+
+
+/* ── VERSION 2.0.1 ADDITIONS ── */
+.btn-warning { background: #fff3cd; color: #6b5100; border: 1px solid #e6cf75; }
+.not-offered { background: #fff3cd; color: #6b5100; }
+.progress-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--text-soft);
+}
+.progress-breakdown span {
+  background: #f4f4f4;
+  border-radius: 999px;
+  padding: 4px 8px;
+}
+.progress-breakdown strong { color: var(--text); }
+
+.status-action-note { margin-top:5px; text-align:center; font-size:10px; color:var(--text-soft); }

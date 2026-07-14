@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '2.0.0';
+  const APP_VERSION = '2.0.1';
   const STORAGE_KEY = 'ewv2_state';
   const MAX_STOCK = 999;
   const PRODUCTS = Array.isArray(window.PRODUCTS) ? window.PRODUCTS : [];
@@ -82,7 +82,13 @@
         ...parsed,
         stock: parsed.stock && typeof parsed.stock === 'object' ? parsed.stock : {},
         history: Array.isArray(parsed.history) ? parsed.history : [],
-        inventories: Array.isArray(parsed.inventories) ? parsed.inventories : []
+        inventories: Array.isArray(parsed.inventories)
+          ? parsed.inventories.map(inventory => ({
+              ...inventory,
+              entries: inventory.entries && typeof inventory.entries === 'object' ? inventory.entries : {},
+              notOffered: inventory.notOffered && typeof inventory.notOffered === 'object' ? inventory.notOffered : {}
+            }))
+          : []
       };
       state.schemaVersion = 2;
       state.appVersion = APP_VERSION;
@@ -117,6 +123,7 @@
       startedAt: now,
       completedAt: now,
       status: 'completed',
+      notOffered: {},
       entries: Object.fromEntries(
         Object.entries(INVENTUR).map(([id, qty]) => [id, {
           id, old: 0, qty, source: 'import', ts: now
@@ -136,6 +143,29 @@
     return state.inventories.find(item => item.id === state.activeInventoryId && item.status === 'active') || null;
   }
 
+  function getInventoryProgress(inventory = getActiveInventory()) {
+    const total = PRODUCTS.length;
+    if (!inventory) return { total, counted: 0, notOffered: 0, processed: 0, open: total, percent: 0 };
+
+    const counted = PRODUCTS.reduce((sum, product) => sum + (inventory.entries?.[product.id] ? 1 : 0), 0);
+    const notOffered = PRODUCTS.reduce((sum, product) => {
+      if (inventory.entries?.[product.id]) return sum;
+      return sum + (inventory.notOffered?.[product.id] ? 1 : 0);
+    }, 0);
+    const processed = counted + notOffered;
+    const open = Math.max(0, total - processed);
+    const percent = total ? Math.round((processed / total) * 100) : 0;
+    return { total, counted, notOffered, processed, open, percent };
+  }
+
+  function getInventoryProductStatus(id) {
+    const inventory = getActiveInventory();
+    if (!inventory) return 'none';
+    if (inventory.entries?.[id]) return 'counted';
+    if (inventory.notOffered?.[id]) return 'not-offered';
+    return 'open';
+  }
+
   function startInventory({ silent = false } = {}) {
     const existing = getActiveInventory();
     if (existing) return existing;
@@ -147,7 +177,8 @@
       startedAt: now.toISOString(),
       completedAt: null,
       status: 'active',
-      entries: {}
+      entries: {},
+      notOffered: {}
     };
     state.inventories.unshift(inventory);
     state.activeInventoryId = inventory.id;
@@ -164,11 +195,10 @@
       return;
     }
 
-    const counted = Object.keys(inventory.entries || {}).length;
-    const open = Math.max(0, PRODUCTS.length - counted);
-    const message = open > 0
-      ? `Es sind noch ${open} von ${PRODUCTS.length} Produkten nicht gezählt. Inventur trotzdem abschließen?`
-      : 'Inventur abschließen?';
+    const progress = getInventoryProgress(inventory);
+    const message = progress.open > 0
+      ? `Es sind noch ${progress.open} von ${progress.total} Produkten offen. Inventur trotzdem abschließen?`
+      : `Alle ${progress.total} Produkte wurden bearbeitet. Inventur abschließen?`;
     if (!window.confirm(message)) return;
 
     inventory.status = 'completed';
@@ -181,8 +211,19 @@
   }
 
   function isCounted(id) {
-    const inventory = getActiveInventory();
-    return Boolean(inventory?.entries?.[id]);
+    return getInventoryProductStatus(id) === 'counted';
+  }
+
+  function isNotOffered(id) {
+    return getInventoryProductStatus(id) === 'not-offered';
+  }
+
+  function inventoryStatusLabel(id) {
+    const status = getInventoryProductStatus(id);
+    if (status === 'counted') return 'gezählt';
+    if (status === 'not-offered') return 'heute nicht angeboten';
+    if (status === 'open') return 'noch offen';
+    return 'keine aktive Inventur';
   }
 
   function validateQuantity(rawValue) {
@@ -206,6 +247,8 @@
     const now = new Date().toISOString();
 
     state.stock[id] = quantity;
+    inventory.notOffered ||= {};
+    delete inventory.notOffered[id];
     inventory.entries[id] = {
       id,
       old: original,
@@ -231,6 +274,52 @@
     return { old: current, qty: quantity, changed: current !== quantity };
   }
 
+  function markNotOffered(id, source = 'inventory') {
+    const product = byId.get(id);
+    if (!product) return false;
+    const inventory = startInventory({ silent: true });
+    inventory.entries ||= {};
+    inventory.notOffered ||= {};
+
+    if (inventory.entries[id]) {
+      const confirmed = window.confirm(`${product.name} wurde in dieser Inventur bereits gezählt. Als „heute nicht angeboten“ markieren? Der gespeicherte Bestand bleibt unverändert.`);
+      if (!confirmed) return false;
+      delete inventory.entries[id];
+    }
+
+    inventory.notOffered[id] = {
+      id,
+      source,
+      ts: new Date().toISOString()
+    };
+    saveState();
+    return true;
+  }
+
+  function resetNotOffered(id) {
+    const inventory = getActiveInventory();
+    if (!inventory?.notOffered?.[id]) return false;
+    delete inventory.notOffered[id];
+    saveState();
+    return true;
+  }
+
+  function handleNotOfferedAction(id, source, { close = null } = {}) {
+    const product = byId.get(id);
+    if (!product) return;
+
+    if (isNotOffered(id)) {
+      if (resetNotOffered(id)) showToast(`↩ ${product.name} ist wieder offen.`);
+    } else {
+      if (!markNotOffered(id, source)) return;
+      showToast(`— ${product.name}: heute nicht angeboten`);
+    }
+
+    if (typeof close === 'function') close();
+    renderAllInventoryState();
+    renderProducts();
+  }
+
   function showPage(name) {
     if (!PAGES.includes(name)) return;
     document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
@@ -254,7 +343,7 @@
           <div class="session-top">
             <div class="session-copy">
               <div class="session-title">Keine aktive Inventur</div>
-              <div class="session-meta">Starte für den monatlichen Verkauf eine neue Inventur. Beim ersten gespeicherten Produkt wird sie andernfalls automatisch gestartet.</div>
+              <div class="session-meta">Starte eine neue Inventur. Jedes Produkt kann gezählt oder als „heute nicht angeboten“ markiert werden.</div>
             </div>
           </div>
           <div class="session-actions">
@@ -264,9 +353,7 @@
       return;
     }
 
-    const counted = Object.keys(inventory.entries || {}).length;
-    const open = Math.max(0, PRODUCTS.length - counted);
-    const percent = PRODUCTS.length ? Math.round((counted / PRODUCTS.length) * 100) : 0;
+    const progress = getInventoryProgress(inventory);
     container.innerHTML = `
       <div class="inventory-session">
         <div class="session-top">
@@ -276,8 +363,12 @@
           </div>
           <span class="count-marker counted">aktiv</span>
         </div>
-        <div class="progress-track"><div class="progress-fill" style="width:${percent}%"></div></div>
-        <div class="progress-label"><span>${counted} von ${PRODUCTS.length} gezählt</span><span>${open} offen</span></div>
+        <div class="progress-track"><div class="progress-fill" style="width:${progress.percent}%"></div></div>
+        <div class="progress-label"><span>${progress.processed} von ${progress.total} bearbeitet</span><span>${progress.open} offen</span></div>
+        <div class="progress-breakdown" aria-label="Inventurstatus">
+          <span><strong>${progress.counted}</strong> gezählt</span>
+          <span><strong>${progress.notOffered}</strong> heute nicht angeboten</span>
+        </div>
         <div class="session-actions">
           <button class="btn btn-ghost" type="button" data-action="show-open-products">Offene Produkte</button>
           <button class="btn btn-primary" type="button" data-action="complete-inventory">Inventur abschließen</button>
@@ -340,9 +431,15 @@
 
   function updateFoundProductCountStatus() {
     if (!currentProduct || $('found-product').style.display === 'none') return;
-    const countedText = isCounted(currentProduct.id) ? ' · in dieser Inventur bereits gezählt' : ' · in dieser Inventur noch offen';
+    const status = getInventoryProductStatus(currentProduct.id);
+    const statusText = status === 'counted'
+      ? ' · in dieser Inventur bereits gezählt'
+      : status === 'not-offered'
+        ? ' · heute nicht angeboten'
+        : ' · in dieser Inventur noch offen';
     const base = `${currentProduct.cat} · ${currentProduct.unit} · EK brutto: ${formatMoney(currentProduct.buyGross)} € · VK: ${formatMoney(currentProduct.sell)} €`;
-    $('fp-meta').textContent = base + countedText;
+    $('fp-meta').textContent = base + statusText;
+    updateNotOfferedButton('scan-not-offered-btn', currentProduct.id);
   }
 
   function clearScan() {
@@ -409,18 +506,25 @@
   }
 
   function normalizeSearch(value) {
-    return String(value || '').trim().toLocaleLowerCase('de-DE');
+    return String(value || '')
+      .trim()
+      .toLocaleLowerCase('de-DE')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/ß/g, 'ss');
+  }
+
+  function productSearchText(product) {
+    return normalizeSearch([product.name, product.id, product.barcode, product.cat, product.unit]
+      .filter(Boolean)
+      .join(' '));
   }
 
   function searchProducts(value) {
     const query = normalizeSearch(value);
     if (!query) return [];
     return PRODUCTS.filter(product => {
-      const haystack = [product.name, product.id, product.barcode, product.cat, product.unit]
-        .filter(Boolean)
-        .join(' ')
-        .toLocaleLowerCase('de-DE');
-      return haystack.includes(query);
+      return productSearchText(product).includes(query);
     }).slice(0, 10);
   }
 
@@ -576,12 +680,22 @@
     });
   }
 
+  function updateNotOfferedButton(buttonId, productId) {
+    const button = $(buttonId);
+    if (!button || !productId) return;
+    const notOffered = isNotOffered(productId);
+    button.textContent = notOffered ? '↩ Wieder als offen markieren' : '— Heute nicht angeboten';
+    button.classList.toggle('btn-warning', !notOffered);
+    button.classList.toggle('btn-ghost', notOffered);
+  }
+
   function renderInventoryStatusFilter() {
     const container = $('status-filter-inv');
     const options = [
       ['all', 'Alle Status'],
       ['open', 'Noch offen'],
-      ['counted', 'Gezählt']
+      ['counted', 'Gezählt'],
+      ['not-offered', 'Heute nicht angeboten']
     ];
     container.innerHTML = '';
     options.forEach(([value, label]) => {
@@ -606,11 +720,12 @@
     const products = PRODUCTS.filter(product => {
       if (activeInventoryCategory && product.cat !== activeInventoryCategory) return false;
       if (search) {
-        const haystack = [product.name, product.id, product.barcode, product.cat].filter(Boolean).join(' ').toLocaleLowerCase('de-DE');
-        if (!haystack.includes(search)) return false;
+        if (!productSearchText(product).includes(search)) return false;
       }
-      if (inventory && activeInventoryStatus === 'open' && isCounted(product.id)) return false;
-      if (inventory && activeInventoryStatus === 'counted' && !isCounted(product.id)) return false;
+      const status = getInventoryProductStatus(product.id);
+      if (inventory && activeInventoryStatus === 'open' && status !== 'open') return false;
+      if (inventory && activeInventoryStatus === 'counted' && status !== 'counted') return false;
+      if (inventory && activeInventoryStatus === 'not-offered' && status !== 'not-offered') return false;
       return true;
     });
 
@@ -621,8 +736,13 @@
       list.innerHTML = products.map(product => {
         const stock = getStock(product.id);
         const stockClass = stock === 0 ? 'stock-empty' : stock < product.min ? 'stock-low' : 'stock-ok';
+        const inventoryStatus = getInventoryProductStatus(product.id);
         const marker = inventory
-          ? `<span class="count-marker ${isCounted(product.id) ? 'counted' : 'uncounted'}">${isCounted(product.id) ? 'gezählt' : 'offen'}</span>`
+          ? inventoryStatus === 'counted'
+            ? '<span class="count-marker counted">gezählt</span>'
+            : inventoryStatus === 'not-offered'
+              ? '<span class="count-marker not-offered">nicht angeboten</span>'
+              : '<span class="count-marker uncounted">offen</span>'
           : '';
         return `<div class="product-row" data-product-id="${escapeHTML(product.id)}">
           <span class="cat-dot cat-${escapeHTML(product.cat)}"></span>
@@ -644,11 +764,12 @@
     modalSource = source;
     const stock = getStock(id);
     $('modal-name').textContent = product.name;
-    $('modal-meta').textContent = `${product.cat} · ${product.unit} · VK: ${formatMoney(product.sell)} € · Mindestbestand: ${product.min}${isCounted(id) ? ' · bereits gezählt' : ''}`;
+    $('modal-meta').textContent = `${product.cat} · ${product.unit} · VK: ${formatMoney(product.sell)} € · Inventurstatus: ${inventoryStatusLabel(id)}`;
     $('modal-stock').textContent = stock;
     $('modal-qty').value = stock;
     hideValidation('modal-validation');
     updateQuantityDifference('modal-qty', 'modal-stock-difference', id);
+    updateNotOfferedButton('modal-not-offered-btn', id);
     $('modal-overlay').classList.add('open');
   }
 
@@ -677,8 +798,7 @@
     PRODUCTS.forEach(product => {
       if (activeProductCategory && product.cat !== activeProductCategory) return;
       if (search) {
-        const haystack = [product.name, product.id, product.barcode, product.cat].filter(Boolean).join(' ').toLocaleLowerCase('de-DE');
-        if (!haystack.includes(search)) return;
+        if (!productSearchText(product).includes(search)) return;
       }
       grouped[product.cat] ||= [];
       grouped[product.cat].push(product);
@@ -734,7 +854,7 @@
         <div class="detail-row"><span class="dlabel">Mindestbestand</span><span class="dvalue">${product.min}</span></div>
         <div class="detail-row"><span class="dlabel">Standard-Bestellmenge</span><span class="dvalue">${product.order}</span></div>
         <div class="detail-row"><span class="dlabel">Aktueller Bestand</span><span class="dvalue ${getStock(product.id) < product.min ? 'red' : ''}">${getStock(product.id)} Stück</span></div>
-        <div class="detail-row"><span class="dlabel">Aktuelle Inventur</span><span class="dvalue">${getActiveInventory() ? (isCounted(product.id) ? 'gezählt' : 'noch offen') : 'keine aktiv'}</span></div>
+        <div class="detail-row"><span class="dlabel">Aktuelle Inventur</span><span class="dvalue">${inventoryStatusLabel(product.id)}</span></div>
       </div>
       <button class="btn btn-primary btn-full" type="button" data-action="edit-detail-stock" data-product-id="${escapeHTML(product.id)}">✏️ Bestand erfassen</button>`;
     $('detail-panel').classList.add('open');
@@ -860,6 +980,9 @@
     $('scan-qty-plus').addEventListener('click', () => changeQuantity('new-qty', 1));
     $('new-qty').addEventListener('input', () => currentProduct && updateQuantityDifference('new-qty', 'scan-stock-difference', currentProduct.id));
     $('scan-save-btn').addEventListener('click', saveScanStock);
+    $('scan-not-offered-btn').addEventListener('click', () => {
+      if (currentProduct) handleNotOfferedAction(currentProduct.id, currentProductSource, { close: clearScan });
+    });
     $('scan-cancel-btn').addEventListener('click', clearScan);
     $('scan-product-search').addEventListener('input', renderScanSearchResults);
     $('scan-search-results').addEventListener('click', event => {
@@ -898,6 +1021,9 @@
     $('modal-qty-plus').addEventListener('click', () => changeQuantity('modal-qty', 1));
     $('modal-qty').addEventListener('input', () => modalProductId && updateQuantityDifference('modal-qty', 'modal-stock-difference', modalProductId));
     $('modal-save-btn').addEventListener('click', saveModalStock);
+    $('modal-not-offered-btn').addEventListener('click', () => {
+      if (modalProductId) handleNotOfferedAction(modalProductId, modalSource, { close: closeModal });
+    });
     $('modal-cancel-btn').addEventListener('click', closeModal);
 
     $('detail-close-btn').addEventListener('click', closeDetail);

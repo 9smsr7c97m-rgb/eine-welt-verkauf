@@ -1,8 +1,8 @@
-# Eine Welt Verkauf – Version 2.0
+# Eine Welt Verkauf – Version 2.0.1
 
 Diese Version ist die technische Überarbeitung der bisherigen Inventar-App.
 
-## Neu in Version 2.0
+## Neu in Version 2.0.1
 
 - reparierter Kategorienfilter, einschließlich **„Alle“**
 - Quagga2 statt des nicht mehr gepflegten ursprünglichen QuaggaJS
@@ -56,7 +56,7 @@ Offline-Unterstützung und lokale Einbindung der Scannerbibliothek folgen in Ver
 12. Negativen Bestand manuell eingeben: Speichern muss verhindert werden.
 13. Inventurfortschritt und Filter „Noch offen“ kontrollieren.
 
-## Noch nicht Bestandteil von Version 2.0
+## Noch nicht Bestandteil von Version 2.0.1
 
 - Backup und Wiederherstellung
 - vollständige Offline-PWA mit Service Worker
@@ -64,3 +64,13 @@ Offline-Unterstützung und lokale Einbindung der Scannerbibliothek folgen in Ver
 - Google-Sheets-Anbindung
 
 Diese Punkte folgen in den nächsten Versionen.
+
+
+## Änderungen in 2.0.1
+
+- Suche ist akzent- und umlauttolerant: `Orga` findet `Orgánico`, `Cafe` findet `Café`.
+- Produktnamen bleiben sichtbar unverändert; nur der Suchvergleich wird intern normalisiert.
+- Produkte können in einer laufenden Inventur als **Heute nicht angeboten** markiert werden.
+- Dieser Status verändert den gespeicherten Bestand nicht.
+- Die Fortschrittsanzeige unterscheidet **gezählt**, **heute nicht angeboten** und **offen**.
+- Die Bestellliste verwendet weiterhin die bisherige Mindestbestandslogik; sie wird in dieser Version noch nicht umgebaut.

@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-title" content="EineWelt">
   <meta name="theme-color" content="#2d6a4f">
   <title>Eine Welt Verkauf</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=2.0.1">
 </head>
 <body>
 
@@ -20,7 +20,7 @@
 <header>
   <span class="logo">🌍</span>
   <h1>Eine Welt Verkauf <span>Fair-Trade Inventar</span></h1>
-  <span class="header-version">v2.0</span>
+  <span class="header-version">v2.0.1</span>
 </header>
 
 <main>
@@ -63,6 +63,8 @@
       <div class="stock-difference" id="scan-stock-difference"></div>
       <div class="validation-message" id="scan-validation"></div>
       <button class="btn btn-primary btn-full" id="scan-save-btn" type="button">✓ Bestand speichern</button>
+      <button class="btn btn-warning btn-full" id="scan-not-offered-btn" type="button" style="margin-top:8px;">— Heute nicht angeboten</button>
+      <div class="status-action-note">Der bisherige Bestand bleibt dabei unverändert.</div>
       <button class="btn btn-ghost btn-full" id="scan-cancel-btn" type="button" style="margin-top:6px;">Abbrechen</button>
     </div>
   </section>
@@ -107,9 +109,9 @@
     <div class="card" style="overflow:hidden;"><div id="history-list"></div></div>
 
     <div class="card card-pad" style="margin-top:16px; border:2px solid var(--sand);">
-      <div class="section-title">Version 2.0</div>
+      <div class="section-title">Version 2.0.1</div>
       <p style="font-size:13px; color:var(--text-soft); line-height:1.6;">
-        Diese Version enthält einen überarbeiteten Scanner, eine direkte Produktsuche, Eingabeprüfung und Inventursitzungen mit Fortschrittsanzeige. Vorhandene Bestände aus der bisherigen App werden übernommen.
+        Die Suche ignoriert Akzente und Umlaute. Produkte können innerhalb einer Inventur als „heute nicht angeboten“ markiert werden; die Fortschrittsanzeige unterscheidet gezählt, nicht angeboten und offen.
       </p>
     </div>
   </section>
@@ -141,6 +143,8 @@
     <div class="stock-difference" id="modal-stock-difference"></div>
     <div class="validation-message" id="modal-validation"></div>
     <button class="btn btn-primary btn-full" id="modal-save-btn" type="button">✓ Speichern</button>
+    <button class="btn btn-warning btn-full" id="modal-not-offered-btn" type="button" style="margin-top:8px;">— Heute nicht angeboten</button>
+    <div class="status-action-note">Der bisherige Bestand bleibt dabei unverändert.</div>
     <button class="btn btn-ghost btn-full" id="modal-cancel-btn" type="button" style="margin-top:8px;">Abbrechen</button>
   </div>
 </div>
@@ -171,8 +175,8 @@
 
 <div id="toast"></div>
 
-<script src="products.js"></script>
+<script src="products.js?v=2.0.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.12.1/dist/quagga.min.js"></script>
-<script src="app.js"></script>
+<script src="app.js?v=2.0.1"></script>
 </body>
 </html>
